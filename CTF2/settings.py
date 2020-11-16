@@ -34,10 +34,10 @@ INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'vul_web.apps.VulWebConfig',
+    'django.contrib.sessions',
 ]
 
 MIDDLEWARE = [
@@ -127,4 +127,10 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'bootcamp.ctf@gmail.com'
+EMAIL_HOST_PASSWORD = 'a0b6ef0f23dd4e06fdfe61de7c9ed12e8e020123d73c59f9dfac03aa5d36c8f5'
 #static config

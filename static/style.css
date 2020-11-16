@@ -430,7 +430,7 @@ input:focus {
           padding: 0 30px;
           border-bottom: 2px solid transparent; }
           .header-area .videomag-main-menu .top-search-area form input:focus {
-            border-bottom-color: #ff1662; }
+            border-bottom-color: #ffffff; }
         .header-area .videomag-main-menu .top-search-area form button {
           position: absolute;
           width: 40px;
@@ -444,7 +444,7 @@ input:focus {
           cursor: pointer;
           color: #ffffff; }
           .header-area .videomag-main-menu .top-search-area form button:hover {
-            color: #ff1662; }
+            color: #ffffff; }
   .header-area .is-sticky .videomag-main-menu {
     z-index: 9999;
     box-shadow: 0 5px 50px 0 rgba(0, 0, 0, 0.2); }
@@ -587,7 +587,7 @@ input:focus {
   .video-play-btn:hover, .video-play-btn:focus {
     color: #ffffff;
     font-size: 30px;
-    background-color: #ff1662;
+    background-color: #ffffff;
     box-shadow: 0 0 30px 0 rgba(0, 0, 0, 0.2); }
   .video-play-btn.style2 {
     width: 58px;
@@ -616,7 +616,7 @@ input:focus {
     font-weight: 700;
     margin-bottom: 5px; }
     .single-blog-post .blog-content .post-tag:hover, .single-blog-post .blog-content .post-tag:focus {
-      color: #ff1662; }
+      color: #ffffff; }
     @media only screen and (max-width: 767px) {
       .single-blog-post .blog-content .post-tag {
         font-size: 10px; } }
@@ -1155,11 +1155,13 @@ input:focus {
 .contact-form-area .form-control {
   position: relative;
   z-index: 2;
+  height: 48px;
   width: 100%;
   background-color: #ffffff;
   font-size: 12px;
   margin-bottom: 15px;
   border: 1px solid #a5a5a5;
+  border-radius: 0;
   padding: 15px 30px;
   font-weight: 500;
   font-style: italic;
@@ -1186,21 +1188,3 @@ input:focus {
 /* ====== The End ====== */
 
 /*# sourceMappingURL=style.css.map */
-body input#customFile{
-
-position: relative;
-z-index: 2;
-height: 48px;
-width: 100%;
-background-color: #ffffff;
-font-size: 12px;
-margin-bottom: 15px;
-border: 1px solid #a5a5a5;
-border-radius: 0;
-padding: 15px 30px;
-font-weight: 500;
-font-style: italic;
-color: #aeaeae;
--webkit-transition-duration: 500ms;
-transition-duration: 500ms;
-}

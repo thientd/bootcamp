@@ -1,0 +1,1 @@
+SALT_KEY="b00tCamp2020CTF"
