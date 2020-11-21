@@ -42,10 +42,34 @@
 <section class="container">
 	<div class="row">
 		<div class="col-md-12 col-sm-12">
-			<div class="about">
-				<h3 class="accent">Easy Profile</h3>
-				<h2>Bootstrap v3.3.5</h2>
-				<p>This easy HTML profile is brought to you by templatemo website. There are 4 color themes, <a href="index-green.html">Green</a>, <a href="index.html">Blue</a>, <a href="index-gray.html">Gray</a>, and <a href="index-orange.html">Orange</a>. Sed vitae dui in neque elementum tempor eu id risus. Phasellus sed facilisis lacus, et venenatis augue.</p>
+			<div class="about" >
+					<h3 class="accent" style="font-family:calibri"> Các phản hồi từ user:</h3>
+					<table class="table" style="font-family:calibri">
+					  <thead class="thead-light">
+						<tr>
+						  <th scope="col">#</th>
+						  <th scope="col">name</th>
+						  <th scope="col">email</th>
+						  <th scope="col">message</th>
+						</tr>
+					  </thead>
+					  <tbody>
+					  {% for item in data_feed %}
+							<tr>
+							  <th scope="row">{{ item.id }}</th>
+							  <td>{{ item.name }}</td>
+							  <td>{{ item.email }}</td>
+							  <td>
+								  {% autoescape off %}
+								  	{{ item.message }}
+								  {% endautoescape %}
+							  </td>
+							</tr>
+					  {% endfor %}
+
+					  </tbody>
+					</table>
+
 			</div>
 		</div>
 		<div class="col-md-6 col-sm-12">
@@ -65,7 +89,7 @@
 	<div class="container">
 		<div class="row">
 			<div class="col-md-12 col-sm-12">
-				<p>This is private profile</p>
+				<p>This is private profile for {{ username }}</p>
 				<ul class="social-icons">
 					<li><a href="#" class="fa fa-facebook"></a></li>
                     <li><a href="#" class="fa fa-google-plus"></a></li>

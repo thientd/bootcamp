@@ -43,7 +43,7 @@
 
 				{% endif %}
 				<form class="login100-form validate-form" method="post" action="/processlogin/">
-					{% csrf_token %}
+
 					<span class="login100-form-title p-b-55">
 						Đăng nhập
 					</span>
@@ -76,6 +76,12 @@
 							Login
 						</button>
 					</div>
+					<div class="container-login100-form-btn p-t-25">
+						<a href="/register">
+							Đăng ký tài khoản
+						</a>
+					</div>
+
 
 
 
@@ -90,6 +96,7 @@
 <!--					</a>-->
 
 					<div class="text-center w-full p-t-115">
+
 						<span class="txt1">
 							Quên mật khẩu?
 						</span>
@@ -98,6 +105,7 @@
 							Khôi phục ngay
 						</a>
 					</div>
+
 				</form>
 			</div>
 		</div>

@@ -31,6 +31,9 @@ from vul_web.views import processAccount
 from vul_web.views import profile
 from vul_web.views import processlogin
 from vul_web.views import admin
+from vul_web.views import processReset
+from vul_web.views import processChangePass
+from vul_web.views import display_reset_pass
 
 urlpatterns = [
     path('admin/', admin),
@@ -49,5 +52,8 @@ urlpatterns = [
     path(r'register/', register),
     path(r'processAccount/', processAccount),
     path(r'profile/', profile),
+    path(r'processReset/', processReset),
+    path(r'processChangePass/', processChangePass),
+    path(r'display_reset_pass/', display_reset_pass),
 ]
 

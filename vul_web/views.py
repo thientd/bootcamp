@@ -8,6 +8,7 @@ from django.contrib import messages
 from vul_web.models import *
 from vul_web.rce.post import *
 from datetime import datetime, timedelta
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.csrf import csrf_protect
 from django.utils.crypto import get_random_string
 import hashlib
@@ -17,9 +18,9 @@ from vul_web.Encrypt import encrypt
 from vul_web.Encrypt import config
 from django.shortcuts import redirect
 from django.contrib.sessions.backends.db import SessionStore
-from django.contrib.sessions.models import Session
-
-
+from vul_web.Encrypt.aes import AESCipher
+from vul_web.Encrypt import rsa
+KEY = "14d2e1a07be6405dd39eef738c7b9dc97978bcdcdf7cbf64dd60c93d8de59872"
 def homePageView(request):
     if request.method == 'GET':
         page2_query = "select * from vul_web_infopost where tag ='page2'"
@@ -89,7 +90,6 @@ def register(request):
     return render(request, 'register.html')
 
 
-@csrf_protect
 def processfeedback(request):
     if request.method == "POST":
         feed_name = request.POST.get("name")
@@ -101,7 +101,6 @@ def processfeedback(request):
         messages.success(request, message_)
 
     return render(request, 'contact2.html')
-
 
 @csrf_protect
 def processAccount(request):
@@ -158,7 +157,7 @@ def show_post_detail(request):
 
 def downloadImage(request):
     file_name = request.GET.get("img_id")
-    f = open("static\\img\\bg-img\\" + file_name, "rb")
+    f = open("static/img/bg-img/" + file_name, "rb")
 
     b64_img = base64.b64encode(f.read())
 
@@ -184,18 +183,19 @@ def admin(request):
         session_id = request.COOKIES.get("JESSIONID")
         if (session_id == "24cbb434eb0b4c9950700ef495bb2c5f"):
             feed_back = Feed.objects.all()
-            data_feed = {"data_feed": feed_back}
+            data_feed = {
+                "data_feed": feed_back,
+                "username": "Admin"
+            }
 
-        return render(request, 'user_profile.html', data_feed)
-        else:
-            return redirect("/login/")
+            return render(request, 'user_profile.html', data_feed)
+
+    return redirect("/login/")
 
 
 def login(request):
     if request.COOKIES.get("JESSIONID"):
         session_user = SessionStore(session_key=request.COOKIES.get("JESSIONID"))
-        # print(session_user.session_data
-        print(session_user["timeout"])
         if check_session_timeout(session_user["timeout"]):
             checkuser = User.objects.filter(email=session_user["username"])
             if checkuser:
@@ -208,7 +208,7 @@ def login(request):
     return render(request, 'login.html')
 
 
-@csrf_protect
+@csrf_exempt
 def processlogin(request):
     if request.method == "POST":
         create_new_session = SessionStore()
@@ -261,7 +261,6 @@ def generate_token(account):
     return salt_key_string
 
 
-@csrf_protect
 def resetpass(request):
     if request.method == "POST":
         user = request.POST.get("username")
@@ -276,9 +275,9 @@ def resetpass(request):
                         now = datetime.now()
                         if (reset_user[0].status == "resetting" and now < datetime.strptime(reset_user[0].timeout_token,
                                                                                             "%Y-%m-%d %H:%M:%S.%f")):
-                            email_content = "Chào bạn1 " + i.name
-                            email_content += "\r\n Để reset mật khẩu bạn hãy click vào đây: <a href='http://127.0.0.1/resetpassword?token=>" + \
-                                             reset_user[0].token + "'>Đặt lại mật khẩu</a>"
+                            email_content = "Chào bạn" + i.name
+                            email_content += "\r\n Để reset mật khẩu bạn hãy click vào đây: http://localhost:8000/processReset?token=" + \
+                                             reset_user[0].token
                             send_email("Khôi phục mật khẩu", email_content, [email])
                             message_ = "Đã gửi thành công token đến email của bạn"
                             messages.success(request, message_)
@@ -291,11 +290,9 @@ def resetpass(request):
                             reset_user_insert.token = token_hash
                             reset_user_insert.timeout_token = time_out
                             reset_user_insert.save()
-                            email_content = "Chào bạn2 " + i.name
-                            email_content += "\n Để reset mật khẩu bạn hãy click vào đây: " \
-                                             "<html>" \
-                                             "<a href='http://127.0.0.1/resetpassword?token=>" + token_hash + "'>Đặt lại mật khẩu</a>" \
-                                                                                                              "</html>"
+                            email_content = "Chào bạn" + i.name
+                            email_content += "\n Để reset mật khẩu bạn hãy click vào đây: http://localhost:8000/processReset?token=" + token_hash
+
                             send_email("Khôi phục mật khẩu", email_content, [email])
                             update_satus = resetpassword2.objects.get(user_id=i.user_id)
                             update_satus.status = "resetting"
@@ -317,3 +314,64 @@ def resetpass(request):
             messages.error(request, message_)
         return render(request, 'reset_password.html')
     return render(request, 'reset_password.html')
+
+
+def processReset(request):
+    if request.method == "GET":
+        token_req = request.GET.get("token")
+        if token_req != "":
+            token_info = resetpassword2.objects.filter(token=token_req)
+            if token_info:
+                data_token =str(token_info[0].user_id)+"|"+token_info[0].token
+                #     "user_id": token_info[0].user_id,
+                #     "token": token_info[0].token
+                # }
+                key = rsa.load_key("vul_web/Encrypt/rsa_key.txt")
+                f = open("vul_web/Encrypt/aes_key.txt", "rb")
+                dec_aes_key = rsa.dec_data(f.read(), key)
+                enc_object = AESCipher(str(dec_aes_key))
+                enc_data = enc_object.encrypt(data_token)
+                data_res = {"sec_data":enc_data.decode('ascii')}
+                return render(request,"change_pass.html",data_res)
+    return render(request, 'reset_password.html')
+def display_reset_pass(request):
+
+    return render(request, 'reset_password.html')
+@csrf_protect
+def processChangePass(request):
+    try:
+        username = request.POST.get("username")
+        password_new = request.POST.get("password")
+        sec_data = request.POST.get("XXXXXXX")
+        key = rsa.load_key("vul_web/Encrypt/rsa_key.txt")
+        f = open("vul_web/Encrypt/aes_key.txt", "rb")
+        dec_aes_key = rsa.dec_data(f.read(), key)
+        dec_ob = AESCipher(str(dec_aes_key))
+        dec_data = dec_ob.decrypt(sec_data)
+        dec_data_split = dec_data.split('|')
+        uid =   dec_data_split[0]
+        token = dec_data_split[1]
+        reset_user  = User.objects.filter(user_id = uid)
+        reset_token = resetpassword2.objects.filter(user_id = uid)
+        if reset_user:
+            if reset_user[0].name == username:
+                if reset_token[0].token == token:
+                    user_pass_hashed = hashlib.sha256(str(password_new).encode()).hexdigest()
+                    reset_user_pass = User.objects.get(user_id=uid)
+                    reset_user_pass.password = user_pass_hashed
+                    reset_user_pass.save()
+                    message_ = "Đã cập nhật mật khẩu thành công"
+                    messages.success(request, message_)
+                    return redirect("/display_reset_pass/")
+        message_ = "Cập nhật mật khẩu không thành công"
+    except Exception as e:
+        print(str(e))
+        message_ = "Cập nhật mật khẩu không thành công"
+        messages.error(request, message_)
+        return redirect("/processReset/")
+    message_ = "Cập nhật mật khẩu không thành công"
+    messages.error(request, message_)
+    return redirect("/display_reset_pass/")
+
+
+

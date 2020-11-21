@@ -1,7 +1,7 @@
 import hashlib
 import pickle
 import os
-POST_FOLDER='static\\post\\'
+POST_FOLDER='static/post/'
 def sha256(s):
     return hashlib.sha256(s.encode()).hexdigest()
 def handle_uploaded_file(note, image):
