@@ -15,12 +15,44 @@ class InfoPost(models.Model):
 
 
 class Spost(models.Model):
+    id = models.AutoField(primary_key=True)
     name = models.TextField()
     phone = models.TextField()
     email = models.TextField()
     message = models.TextField()
     image_filename = models.TextField()
     title = models.TextField()
+
+
+class Spost2(models.Model):
+    id = models.CharField(max_length=255, primary_key=True)
+    name = models.TextField()
+    phone = models.TextField()
+    email = models.TextField()
+    message = models.TextField()
+    image_filename = models.TextField()
+    title = models.TextField()
+
+
+class Spost3(models.Model):
+    post_id = models.TextField()
+    name = models.TextField()
+    phone = models.TextField()
+    email = models.TextField()
+    message = models.TextField()
+    image_filename = models.TextField()
+    title = models.TextField()
+
+
+class Spost4(models.Model):
+    post_id = models.TextField()
+    name = models.TextField()
+    phone = models.TextField()
+    email = models.TextField()
+    message = models.TextField()
+    image_filename = models.TextField()
+    title = models.TextField()
+    status = models.TextField()
 
 
 class Feed(models.Model):
@@ -42,3 +74,17 @@ class resetpassword2(models.Model):
     status = models.TextField()
     token = models.TextField()
     timeout_token = models.TextField()
+
+
+class FTP(models.Model):
+    user_name = models.TextField()
+    password = models.TextField()
+    host = models.TextField()
+    schedule = models.IntegerField()
+
+
+class File_info(models.Model):
+    file_name = models.TextField()
+    hash = models.TextField()
+    status = models.TextField()
+    time_to_push = models.IntegerField()

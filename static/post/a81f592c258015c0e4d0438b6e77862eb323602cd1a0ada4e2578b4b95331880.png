@@ -1,0 +1,1 @@
+dir D:\Doan_PhuLQ -Recurse | Get-FileHash -Algorithm MD5| Export-csv -path D:\sh2.csv

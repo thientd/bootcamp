@@ -28,3 +28,31 @@ function view_detail_post1(){
 var post_id = $('input#post_id').val()
 window.location ="/show_post_detail?post_id="+post_id
 }
+
+function show_config () {
+$.get( "/admin/post/show_config", function( data ) {
+ $('input#config_username').val(data.username)
+ $('input#config_password').val(data.password)
+ $('input#config_host').val(data.host)
+});
+
+}
+function save_config () {
+ username = $('input#config_username').val()
+ password = $('input#config_password').val()
+ host =     $('input#config_host').val()
+ data_get = "username="+username+"&password="+password+"&host="+host
+    $.get( "/root/savecf?"+data_get, function( data ) {
+     $("div#alert_message").html(data.message)
+    });
+
+}
+function show_key () {
+    $.get( "/root/showkey/", function( data ) {
+     $("div#alert_message2").html(data.key)
+    });
+
+}
+
+
+

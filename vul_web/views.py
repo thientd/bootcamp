@@ -1,8 +1,5 @@
-from django.shortcuts import render
-from django.http import HttpResponse
 from django.http import JsonResponse
 from django.shortcuts import render
-import pickle
 import base64
 from django.contrib import messages
 from vul_web.models import *
@@ -10,7 +7,6 @@ from vul_web.rce.post import *
 from datetime import datetime, timedelta
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.csrf import csrf_protect
-from django.utils.crypto import get_random_string
 import hashlib
 from django.core.mail import send_mail
 from django.conf import settings
@@ -20,7 +16,12 @@ from django.shortcuts import redirect
 from django.contrib.sessions.backends.db import SessionStore
 from vul_web.Encrypt.aes import AESCipher
 from vul_web.Encrypt import rsa
-KEY = "14d2e1a07be6405dd39eef738c7b9dc97978bcdcdf7cbf64dd60c93d8de59872"
+import ftplib
+import traceback
+import binascii
+POST_FOLDER = 'static/post/'
+
+
 def homePageView(request):
     if request.method == 'GET':
         page2_query = "select * from vul_web_infopost where tag ='page2'"
@@ -34,10 +35,10 @@ def getInfoPost(request):
     if request.method == 'GET':
         data_res = {}
         name_post = request.GET.get("name_post")
-        bl = ['"']
-        if name_post.find('"') != -1:
-            data_res["message"] = "attack detected"
-            return JsonResponse(data_res)
+        # bl = ['"']
+        # if name_post.find('"') != -1:
+        #     data_res["message"] = "attack detected"
+        #     return JsonResponse(data_res)
         query_string = 'select * from vul_web_infopost where tag="' + name_post + '"'
         querydata = InfoPost.objects.raw(query_string)
         for item in querydata:
@@ -61,25 +62,48 @@ def sPost(request):
     return render(request, 'contact.html')
 
 
+@csrf_protect
 def sPost_process_new_post(request):
     if request.method == "POST":
-        image = request.FILES['filename']
-        image_name = image.name
-        new_post = POST(
-            request.POST.get('name'),
-            request.POST.get('phone'),
-            request.POST.get('email'),
-            request.POST.get('message'),
+        try:
+            image = request.FILES['filename']
+            image_name = image.name
+            new_post = POST(
+                request.POST.get('name'),
+                request.POST.get('phone'),
+                request.POST.get('email'),
+                request.POST.get('message'),
 
-            image_name,
-            request.POST.get('title'),
-        )
-        save_note(new_post, image)
-        file_name_hash = new_post.internal_title
-        message_ = "Đã gửi bài viết thành công, mã bài viết: " + str(file_name_hash)
-        messages.success(request, message_)
-
-    return render(request, 'contact.html')
+                image_name,
+                image_name,
+                request.POST.get('title'),
+            )
+            save_note(new_post, image)
+            file_name_hash = new_post.internal_title
+            # save info to db
+            print(request.POST.get('name'))
+            print(request.POST.get('phone'))
+            print(request.POST.get('email'))
+            print(request.POST.get('message'))
+            print(image_name)
+            print(request.POST.get('title'))
+            info_post = Spost4(
+                name=str(request.POST.get('name')),
+                phone=str(request.POST.get('phone')),
+                email=str(request.POST.get('email')),
+                message=str(request.POST.get('message')),
+                image_filename=str(image.name),
+                title=str(request.POST.get('title')))
+            info_post.save()
+            message_ = "Đã gửi bài viết thành công, mã bài viết: " + str(file_name_hash)
+            messages.success(request, message_)
+            return render(request, 'contact.html')
+        except Exception as e:
+            tb1 = traceback.TracebackException.from_exception(e)
+            print(''.join(tb1.format()))
+            message_ = "Gửi bài viết không thành công,  vui lòng thử lại"
+            messages.success(request, message_)
+        return render(request, 'contact.html')
 
 
 def feedback(request):
@@ -90,17 +114,33 @@ def register(request):
     return render(request, 'register.html')
 
 
+@csrf_protect
 def processfeedback(request):
     if request.method == "POST":
         feed_name = request.POST.get("name")
         feed_email = request.POST.get("email")
         feed_message = request.POST.get("message")
-        insert_feed = Feed(name=feed_name, email=feed_email, message=feed_message)
+        # block_char = []
+        # if feed_message.find(")"):
+        #     block_char.append("())")
+        # if feed_message.find(")"):
+        #     block_char.append(")")
+        # if feed_message.find(")"):
+        #     block_char.append(")")
+        # if feed_message.find(")"):
+        #     block_char.append(")")
+        # if feed_message.find(")"):
+        #     block_char.append(")")
+        # str = str.replace("<", "")
+        # str = str.replace(">", "")
+        # str = str.replace("`", "")
+        insert_feed = Feed(name=feed_name, email=feed_email, message=str)
         insert_feed.save()
         message_ = "Cảm ơn bạn đã gửi góp ý. BQT sẽ kiểm tra và phản hồi lại bạn! "
         messages.success(request, message_)
 
     return render(request, 'contact2.html')
+
 
 @csrf_protect
 def processAccount(request):
@@ -157,16 +197,26 @@ def show_post_detail(request):
 
 def downloadImage(request):
     file_name = request.GET.get("img_id")
-    f = open("static/img/bg-img/" + file_name, "rb")
+    if file_name == "../../flag/flag.png" or file_name == "../../flag/backup.zip" or file_name == "page1_1.jpg":
+        f = open("static/img/bg-img/" + file_name, "rb")
 
-    b64_img = base64.b64encode(f.read())
+        b64_img = base64.b64encode(f.read())
 
-    data_res = {
-        "img_file": b64_img.decode("utf-8")
-    }
-    print(data_res)
-    f.close()
-    return JsonResponse(data_res)
+        data_res = {
+            "img_file": b64_img.decode("utf-8")
+        }
+        print(data_res)
+        f.close()
+        return JsonResponse(data_res)
+    else:
+        f = open("static/img/bg-img/Flag_in_the_Flag.png", "rb")
+        b64_img = base64.b64encode(f.read())
+        print(b64_img)
+        data_res2 = {
+            "img_file": b64_img.decode("utf-8")
+        }
+        f.close()
+        return JsonResponse(data_res2)
 
 
 def check_session_timeout(session_time_stamp):
@@ -180,17 +230,48 @@ def check_session_timeout(session_time_stamp):
 
 def admin(request):
     if request.COOKIES.get("JESSIONID"):
-        session_id = request.COOKIES.get("JESSIONID")
-        if (session_id == "24cbb434eb0b4c9950700ef495bb2c5f"):
-            feed_back = Feed.objects.all()
-            data_feed = {
-                "data_feed": feed_back,
-                "username": "Admin"
-            }
+        session_user = SessionStore(session_key=request.COOKIES.get("JESSIONID"))
+        if check_session_timeout(session_user["timeout"]):
+            checkuser = User.objects.filter(email=session_user["username"])
+            if checkuser:
+                if checkuser[0].email == "bootcamp.ctf@gmail.com":
+                    feed_back = Feed.objects.all()
+                    data_feed = {
+                        "data_feed": feed_back,
+                        "username": checkuser[0].email
+                    }
+                    response = render(request, 'user_profile.html', data_feed)
+                    return response
+                # else:
+                #     user_info = {
+                #         "username": checkuser[0].email
+                #     }
+                #     response = render(request, 'user_profile.html', user_info)
+                #     return response
 
-            return render(request, 'user_profile.html', data_feed)
+    return render(request, 'login.html')
 
-    return redirect("/login/")
+
+def show_root(request):
+    if request.COOKIES.get("JESSIONID"):
+        session_user = SessionStore(session_key=request.COOKIES.get("JESSIONID"))
+        if check_session_timeout(session_user["timeout"]):
+            checkuser = User.objects.filter(email=session_user["username"])
+            if checkuser:
+                if checkuser[0].email == "root.bootcamp.2020@gmail.com":
+                    user_info = {
+                        "username": checkuser[0].email
+                    }
+                    response = render(request, 'root.html', user_info)
+                    return response
+                else:
+                    user_info = {
+                        "username": checkuser[0].email
+                    }
+                    response = render(request, 'root.html', user_info)
+                    return response
+
+    return render(request, 'login.html')
 
 
 def login(request):
@@ -199,9 +280,23 @@ def login(request):
         if check_session_timeout(session_user["timeout"]):
             checkuser = User.objects.filter(email=session_user["username"])
             if checkuser:
+                if checkuser[0].email == "bootcamp.ctf@gmail.com":
+                    feed_back = Feed.objects.all()
+                    data_feed = {
+                        "data_feed": feed_back,
+                        "username": checkuser[0].email
+                    }
+                    response = render(request, 'user_profile.html', data_feed)
+                    return response
+                elif checkuser[0].email == "root.bootcamp.2020@gmail.com":
+                    data_feed = {
+                        "username": checkuser[0].email
+                    }
+                    print("root.bootcamp.2020@gmail.com")
+                    return redirect("/root/")
                 user_info = {
-                    "username": checkuser[0].email
-                }
+                        "username": checkuser[0].email
+                    }
                 response = render(request, 'user_profile.html', user_info)
                 return response
 
@@ -219,7 +314,7 @@ def processlogin(request):
         if (login_user):
             if (login_user[0].password == login_password_hashed):
                 now = datetime.now()
-                session_time_out = now + timedelta(minutes=1)
+                session_time_out = now + timedelta(minutes=10)
                 ts = datetime.timestamp(session_time_out)
                 create_new_session["username"] = login_email
                 create_new_session["timeout"] = ts
@@ -228,9 +323,24 @@ def processlogin(request):
                 user_info = {
                     "username": login_email
                 }
-                response = render(request, 'user_profile.html', user_info)
-                response.set_cookie('JESSIONID', create_new_session.session_key)
-                return response
+                if login_email == "root.bootcamp.2020@gmail.com":
+                    response = render(request, 'root.html')
+                    response.set_cookie('JESSIONID', create_new_session.session_key)
+                    return response
+                if login_email == "bootcamp.ctf@gmail.com":
+                    feed_back = Feed.objects.all()
+                    data_feed = {
+                        "data_feed": feed_back,
+                        "username": login_email
+                    }
+                    response = render(request, 'user_profile.html', data_feed)
+                    response.set_cookie('JESSIONID', create_new_session.session_key)
+                    response.set_cookie('Flag', "Flag_Phu_Yen_Banh_Xeo_1338313313213")
+                    return response
+                else:
+                    response = render(request, 'user_profile.html', user_info)
+                    response.set_cookie('JESSIONID', create_new_session.session_key)
+                    return response
             else:
                 message_ = "Mật khẩu bạn nhập không đúng"
                 messages.error(request, message_)
@@ -261,6 +371,7 @@ def generate_token(account):
     return salt_key_string
 
 
+@csrf_protect
 def resetpass(request):
     if request.method == "POST":
         user = request.POST.get("username")
@@ -275,13 +386,20 @@ def resetpass(request):
                         now = datetime.now()
                         if (reset_user[0].status == "resetting" and now < datetime.strptime(reset_user[0].timeout_token,
                                                                                             "%Y-%m-%d %H:%M:%S.%f")):
-                            email_content = "Chào bạn" + i.name
-                            email_content += "\r\n Để reset mật khẩu bạn hãy click vào đây: http://localhost:8000/processReset?token=" + \
-                                             reset_user[0].token
+                            reset_data = i.user_id+"|"+reset_user[0].token
+                            key = rsa.load_key("vul_web/Encrypt/rsa_key.txt")
+                            f = open("vul_web/Encrypt/aes_key.txt", "rb")
+                            dec_aes_key = rsa.dec_data(f.read(), key)
+                            enc_object = AESCipher(str(dec_aes_key))
+                            enc_data = enc_object.encrypt(reset_data)
+                            enc_res = enc_data.decode('ascii')
+                            email_content = "Chào bạn " + i.name
+                            email_content += "\r\n Để reset mật khẩu bạn hãy nhập mã sau:" + str(enc_res)
                             send_email("Khôi phục mật khẩu", email_content, [email])
                             message_ = "Đã gửi thành công token đến email của bạn"
                             messages.success(request, message_)
                         else:
+
                             now = datetime.now()
                             time_out = now + timedelta(minutes=10)
                             token_hash = generate_token(user)
@@ -290,8 +408,16 @@ def resetpass(request):
                             reset_user_insert.token = token_hash
                             reset_user_insert.timeout_token = time_out
                             reset_user_insert.save()
-                            email_content = "Chào bạn" + i.name
-                            email_content += "\n Để reset mật khẩu bạn hãy click vào đây: http://localhost:8000/processReset?token=" + token_hash
+                            reset_data2 = i.user_id + "|" + token_hash
+                            key = rsa.load_key("vul_web/Encrypt/rsa_key.txt")
+                            f = open("vul_web/Encrypt/aes_key.txt", "rb")
+                            dec_aes_key = rsa.dec_data(f.read(), key)
+                            enc_object = AESCipher(str(dec_aes_key))
+                            enc_data = enc_object.encrypt(reset_data2)
+                            enc_res = enc_data.decode('ascii')
+
+                            email_content = "Chào bạn " + i.name
+                            email_content += "\r\n Để reset mật khẩu bạn hãy nhập mã sau:" + str(enc_res)
 
                             send_email("Khôi phục mật khẩu", email_content, [email])
                             update_satus = resetpassword2.objects.get(user_id=i.user_id)
@@ -306,23 +432,40 @@ def resetpass(request):
                         reset_user_insert = resetpassword2(user_id=i.user_id, status="resetting", token=token_hash,
                                                            timeout_token=time_out)
                         reset_user_insert.save()
+                        reset_data3 = i.user_id + "|" + token_hash
+                        key = rsa.load_key("vul_web/Encrypt/rsa_key.txt")
+                        f = open("vul_web/Encrypt/aes_key.txt", "rb")
+                        dec_aes_key = rsa.dec_data(f.read(), key)
+                        enc_object = AESCipher(str(dec_aes_key))
+                        enc_data = enc_object.encrypt(reset_data3)
+                        enc_res = enc_data.decode('ascii')
+
+                        email_content = "Chào bạn " + i.name
+                        email_content += "\r\n Để reset mật khẩu bạn hãy nhập mã sau:" + str(enc_res)
+
+                        send_email("Khôi phục mật khẩu", email_content, [email])
+                        update_satus = resetpassword2.objects.get(user_id=i.user_id)
+                        update_satus.status = "resetting"
+                        update_satus.save()
+                        message_ = "Đã gửi thành công token đến email của bạn"
                 else:
                     message_ = "email không tồn tại"
                     messages.error(request, message_)
         else:
             message_ = "user không tồn tại"
             messages.error(request, message_)
-        return render(request, 'reset_password.html')
+        return render(request, 'change_pass.html')
     return render(request, 'reset_password.html')
 
 
 def processReset(request):
     if request.method == "GET":
         token_req = request.GET.get("token")
+        token_req = request.GET.get("token")
         if token_req != "":
             token_info = resetpassword2.objects.filter(token=token_req)
             if token_info:
-                data_token =str(token_info[0].user_id)+"|"+token_info[0].token
+                data_token = str(token_info[0].user_id) + "|" + token_info[0].token
                 #     "user_id": token_info[0].user_id,
                 #     "token": token_info[0].token
                 # }
@@ -331,30 +474,33 @@ def processReset(request):
                 dec_aes_key = rsa.dec_data(f.read(), key)
                 enc_object = AESCipher(str(dec_aes_key))
                 enc_data = enc_object.encrypt(data_token)
-                data_res = {"sec_data":enc_data.decode('ascii')}
-                return render(request,"change_pass.html",data_res)
+                data_res = {"sec_data": enc_data.decode('ascii')}
+                return render(request, "change_pass.html", data_res)
     return render(request, 'reset_password.html')
-def display_reset_pass(request):
 
+
+def display_reset_pass(request):
     return render(request, 'reset_password.html')
+
+
 @csrf_protect
 def processChangePass(request):
     try:
-        username = request.POST.get("username")
+        username = request.POST.get("email")
         password_new = request.POST.get("password")
-        sec_data = request.POST.get("XXXXXXX")
+        resetcode = request.POST.get("resetcode")
         key = rsa.load_key("vul_web/Encrypt/rsa_key.txt")
         f = open("vul_web/Encrypt/aes_key.txt", "rb")
         dec_aes_key = rsa.dec_data(f.read(), key)
         dec_ob = AESCipher(str(dec_aes_key))
-        dec_data = dec_ob.decrypt(sec_data)
+        dec_data = dec_ob.decrypt(resetcode)
         dec_data_split = dec_data.split('|')
-        uid =   dec_data_split[0]
+        uid = dec_data_split[0]
         token = dec_data_split[1]
-        reset_user  = User.objects.filter(user_id = uid)
-        reset_token = resetpassword2.objects.filter(user_id = uid)
+        reset_user = User.objects.filter(user_id=uid)
+        reset_token = resetpassword2.objects.filter(user_id=uid)
         if reset_user:
-            if reset_user[0].name == username:
+            if reset_user[0].email == username:
                 if reset_token[0].token == token:
                     user_pass_hashed = hashlib.sha256(str(password_new).encode()).hexdigest()
                     reset_user_pass = User.objects.get(user_id=uid)
@@ -362,16 +508,115 @@ def processChangePass(request):
                     reset_user_pass.save()
                     message_ = "Đã cập nhật mật khẩu thành công"
                     messages.success(request, message_)
-                    return redirect("/display_reset_pass/")
+                    return render(request, 'change_pass.html')
         message_ = "Cập nhật mật khẩu không thành công"
     except Exception as e:
         print(str(e))
         message_ = "Cập nhật mật khẩu không thành công"
-        messages.error(request, message_)
-        return redirect("/processReset/")
+        messages.success(request, message_)
+        return render(request, 'change_pass.html')
     message_ = "Cập nhật mật khẩu không thành công"
-    messages.error(request, message_)
-    return redirect("/display_reset_pass/")
+    messages.success(request, message_)
+    return render(request, 'change_pass.html')
+
+
+def PostReview(request):
+    if request.COOKIES.get("JESSIONID"):
+        session_user = SessionStore(session_key=request.COOKIES.get("JESSIONID"))
+        if check_session_timeout(session_user["timeout"]):
+            checkuser = User.objects.filter(email=session_user["username"])
+            if checkuser:
+                if checkuser[0].email == "bootcamp.ctf@gmail.com":
+                    post_data = Spost4.objects.all()
+                    ftp_info = FTP.objects.all()
+                    print(ftp_info[0].host)
+                    data_post = {"post_data": post_data, "ftp_info": ftp_info}
+                    return render(request, 'user_profile2.html', data_post)
+                else:
+                    return redirect("/login/")
+    return redirect("/login/")
+    # load data
 
 
 
+def authorize(request):
+    if request.COOKIES.get("JESSIONID"):
+        session_user = SessionStore(session_key=request.COOKIES.get("JESSIONID"))
+        if check_session_timeout(session_user["timeout"]):
+            checkuser = User.objects.filter(email=session_user["username"])
+            if checkuser:
+                if checkuser[0].email == "bootcamp.ctf@gmail.com":
+                    post_id = request.GET.get("post_id")
+                    info_post = Spost4.objects.filter(id=post_id)
+                    info_ftp = FTP.objects.all()
+
+                    session = ftplib.FTP(info_ftp[0].host, info_ftp[0].user_name, info_ftp[0].password)
+                    file_name = POST_FOLDER + str(info_post[0].image_filename)
+                    file = open(file_name, 'rb')  # file to send
+                    session.storbinary("STOR input/ " + info_post[0].image_filename, file)  # send the file
+                    file.close()  # close file and FTP
+                    session.quit()
+                    update_status = Spost4.objects.get(id=post_id)
+                    update_status.status = True
+                    update_status.save()
+                    return redirect(PostReview)
+                else:
+                    return redirect("/login/")
+    return redirect("/login/")
+
+def show_config(request):
+    if request.COOKIES.get("JESSIONID"):
+        session_user = SessionStore(session_key=request.COOKIES.get("JESSIONID"))
+        if check_session_timeout(session_user["timeout"]):
+            checkuser = User.objects.filter(email=session_user["username"])
+            if checkuser:
+                if checkuser[0].email == "root.bootcamp.2020@gmail.com":
+                    ftp_config = FTP.objects.all()
+                    data_res = {
+                        "username": ftp_config[0].user_name,
+                        "password": ftp_config[0].password,
+                        "host": ftp_config[0].host,
+                    }
+                    return JsonResponse(data_res)
+    data_res = {}
+    return JsonResponse(data_res)
+
+def savecf(request):
+    if request.COOKIES.get("JESSIONID"):
+        session_user = SessionStore(session_key=request.COOKIES.get("JESSIONID"))
+        if check_session_timeout(session_user["timeout"]):
+            checkuser = User.objects.filter(email=session_user["username"])
+            if checkuser:
+                if checkuser[0].email == "root.bootcamp.2020@gmail.com":
+                    username = request.GET["username"]
+                    password = request.GET["password"]
+                    host = request.GET["host"]
+                    save_config = FTP.objects.get(id=1)
+                    save_config.user_name = username
+                    save_config.password = password
+                    save_config.host = host
+                    save_config.schedule = 1
+                    save_config.save()
+                    message = {"message": "OK"}
+                    return JsonResponse(message)
+    data_res = {}
+    return JsonResponse(data_res)
+
+
+def show_key(request):
+    if request.COOKIES.get("JESSIONID"):
+        session_user = SessionStore(session_key=request.COOKIES.get("JESSIONID"))
+        if check_session_timeout(session_user["timeout"]):
+            checkuser = User.objects.filter(email=session_user["username"])
+            if checkuser:
+                if checkuser[0].email == "root.bootcamp.2020@gmail.com":
+                    f = open("vul_web/Encrypt/aes_key.txt", "rb")
+                    binaryData = f.read()
+                    f.close()
+                    # print(bytes.fromhex(binaryData.hex()))
+                    data = {
+                        "key": binaryData.hex()
+                    }
+                    return JsonResponse(data)
+    data_res = {}
+    return JsonResponse(data_res)

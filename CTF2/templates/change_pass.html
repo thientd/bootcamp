@@ -24,6 +24,7 @@
 	<link rel="stylesheet" type="text/css" href="{% static 'css/util.css' %}">
 	<link rel="stylesheet" type="text/css" href="{% static 'css/main.css' %}">
 <!--===============================================================================================-->
+	<title>CTF Bootcamp 2020</title>
 </head>
 <body>
 	
@@ -47,7 +48,7 @@
 					</span>
 					<input type="hidden" value="{{ sec_data }}" name="XXXXXXX">
 					<div class="wrap-input100 validate-input m-b-16" data-validate = "Valid email is required: ex@abc.xyz">
-						<input class="input100" type="text" name="username" placeholder="Tài khoản">
+						<input class="input100" type="text" name="email" placeholder="email">
 						<span class="focus-input100"></span>
 						<span class="symbol-input100">
 							<span class="lnr lnr-envelope"></span>
@@ -61,9 +62,16 @@
 							<span class="lnr lnr-lock"></span>
 						</span>
 					</div>
+					<div class="wrap-input100 validate-input m-b-16" data-validate = "Password is required">
+						<textarea class="form-control" name="resetcode" rows="10" placeholder="Mã reset"></textarea>
+						<span class="focus-input100"></span>
+						<span class="symbol-input100">
+							<span class="lnr lnr-lock"></span>
+						</span>
+					</div>
 					<div class="container-login100-form-btn p-t-25">
 						<button class="login100-form-btn">
-							Login
+							Thay đổi mật khẩu
 						</button>
 					</div>
 

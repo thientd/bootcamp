@@ -34,6 +34,12 @@ from vul_web.views import admin
 from vul_web.views import processReset
 from vul_web.views import processChangePass
 from vul_web.views import display_reset_pass
+from vul_web.views import PostReview
+from vul_web.views import authorize
+from vul_web.views import show_config
+from vul_web.views import show_root
+from vul_web.views import savecf
+from vul_web.views import show_key
 
 urlpatterns = [
     path('admin/', admin),
@@ -54,6 +60,11 @@ urlpatterns = [
     path(r'profile/', profile),
     path(r'processReset/', processReset),
     path(r'processChangePass/', processChangePass),
-    path(r'display_reset_pass/', display_reset_pass),
+    path(r'admin/post/', PostReview),
+    path(r'admin/post/authorize', authorize),
+    path(r'admin/post/show_config', show_config),
+    path(r'root/', show_root),
+    path(r'root/savecf/', savecf),
+    path(r'root/showkey/', show_key),
 ]
 
