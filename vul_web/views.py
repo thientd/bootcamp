@@ -19,6 +19,7 @@ from vul_web.Encrypt import rsa
 import ftplib
 import traceback
 import binascii
+import os
 POST_FOLDER = 'static/post/'
 
 
@@ -35,10 +36,14 @@ def getInfoPost(request):
     if request.method == 'GET':
         data_res = {}
         name_post = request.GET.get("name_post")
-        # bl = ['"']
-        # if name_post.find('"') != -1:
-        #     data_res["message"] = "attack detected"
-        #     return JsonResponse(data_res)
+        name_post = name_post.replace('union','')
+        name_post = name_post.replace('select','')
+        name_post = name_post.replace('or','')
+        name_post = name_post.replace('sleep','')
+        print(name_post);
+        if 'update' in name_post.lower():
+            data_res["message"] = "Good Boy"
+            return JsonResponse(data_res)
         query_string = 'select * from vul_web_infopost where tag="' + name_post + '"'
         querydata = InfoPost.objects.raw(query_string)
         for item in querydata:
@@ -112,7 +117,20 @@ def feedback(request):
 
 def register(request):
     return render(request, 'register.html')
-
+    
+def filter_character(message):
+    blacklist = []
+    if message.find("(") !=-1:
+        blacklist.append("(")
+    if message.find(")") !=-1:
+        blacklist.append(")")
+    if message.find("<") !=-1:
+        blacklist.append("<")
+    if message.find(">") !=-1:
+        blacklist.append(">")
+    if message.find("`") !=-1:
+        blacklist.append("`")
+    return blacklist
 
 @csrf_protect
 def processfeedback(request):
@@ -120,25 +138,16 @@ def processfeedback(request):
         feed_name = request.POST.get("name")
         feed_email = request.POST.get("email")
         feed_message = request.POST.get("message")
-        # block_char = []
-        # if feed_message.find(")"):
-        #     block_char.append("())")
-        # if feed_message.find(")"):
-        #     block_char.append(")")
-        # if feed_message.find(")"):
-        #     block_char.append(")")
-        # if feed_message.find(")"):
-        #     block_char.append(")")
-        # if feed_message.find(")"):
-        #     block_char.append(")")
-        # str = str.replace("<", "")
-        # str = str.replace(">", "")
-        # str = str.replace("`", "")
-        insert_feed = Feed(name=feed_name, email=feed_email, message=str)
+        insert_feed = Feed(name=feed_name, email=feed_email, message=feed_message)
         insert_feed.save()
+        data_feed = {
+            "name" : feed_name,
+            "feed_message": feed_message
+        }
         message_ = "Cảm ơn bạn đã gửi góp ý. BQT sẽ kiểm tra và phản hồi lại bạn! "
         messages.success(request, message_)
 
+        return render(request, 'contact2.html',data_feed)
     return render(request, 'contact2.html')
 
 
@@ -197,8 +206,10 @@ def show_post_detail(request):
 
 def downloadImage(request):
     file_name = request.GET.get("img_id")
-    if file_name == "../../flag/flag.png" or file_name == "../../flag/backup.zip" or file_name == "page1_1.jpg":
-        f = open("static/img/bg-img/" + file_name, "rb")
+    file_name_real =  os.path.basename(file_name)
+    print(file_name_real)
+    if file_name_real == "passwd" or file_name_real == "backup1.zip" or file_name_real == "backup2.zip" or file_name_real == "page1_1.jpg" or file_name_real == "flag":
+        f = open("static/img/bg-img/"+file_name, "rb")
 
         b64_img = base64.b64encode(f.read())
 
@@ -211,11 +222,12 @@ def downloadImage(request):
     else:
         f = open("static/img/bg-img/Flag_in_the_Flag.png", "rb")
         b64_img = base64.b64encode(f.read())
-        print(b64_img)
+        #print(b64_img)
+        f.close()
         data_res2 = {
             "img_file": b64_img.decode("utf-8")
         }
-        f.close()
+   
         return JsonResponse(data_res2)
 
 
@@ -260,7 +272,8 @@ def show_root(request):
             if checkuser:
                 if checkuser[0].email == "root.bootcamp.2020@gmail.com":
                     user_info = {
-                        "username": checkuser[0].email
+                        "username": checkuser[0].email,
+                        "flag" : "Flag_nguoi_Phu_Yen_giong_mien_Tay"
                     }
                     response = render(request, 'root.html', user_info)
                     return response
@@ -309,6 +322,8 @@ def processlogin(request):
         create_new_session = SessionStore()
         login_email = request.POST.get("email")
         login_password = request.POST.get("pass")
+        print(login_email)
+        print(login_password)
         login_password_hashed = hashlib.sha256(str(login_password).encode()).hexdigest()
         login_user = User.objects.filter(email=login_email)
         if (login_user):
@@ -321,10 +336,15 @@ def processlogin(request):
                 create_new_session.save()
                 create_new_session.create()
                 user_info = {
-                    "username": login_email
+                    "username": login_email,
+                    "flag" :"FLAG_GALA_DINNER_6754y6ih#25" 
                 }
                 if login_email == "root.bootcamp.2020@gmail.com":
-                    response = render(request, 'root.html')
+                    user_info = {
+                        "username": login_email,
+                        "flag" : "Flag_nguoi_Phu_Yen_giong_mien_Tay"
+                    }
+                    response = render(request, 'root.html',user_info)
                     response.set_cookie('JESSIONID', create_new_session.session_key)
                     return response
                 if login_email == "bootcamp.ctf@gmail.com":

